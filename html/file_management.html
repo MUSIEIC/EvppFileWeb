@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>文件管理系统</title>
+    <link rel="stylesheet" href="file_management.css" />
+  </head>
+  <body>
+    <div class="container">
+      <h1>文件管理系统</h1>
+
+      <!-- 查找框 -->
+      <div class="search-box">
+        <input
+          type="text"
+          id="searchInput"
+          placeholder="输入文件名或注释查找..."
+        />
+        <button id="searchBtn">查找</button>
+      </div>
+
+      <!-- 显示列表按钮 -->
+      <button id="showListBtn">显示列表</button>
+
+      <!-- 文件列表 -->
+      <table id="fileList">
+        <thead>
+          <tr>
+            <th>文件名</th>
+            <th>所在设备</th>
+            <th>文件位置</th>
+            <th>类型</th>
+            <th>注释</th>
+            <th>操作</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+
+      <!-- 文件上传 -->
+      <div class="upload-section">
+        <h2>文件上传</h2>
+        <form id="uploadForm">
+          <div>
+            <label for="uploadFile">选择文件:</label>
+            <input type="file" id="uploadFile" name="file" required />
+          </div>
+          <div>
+            <label for="fileComment">注释:</label>
+            <input
+              type="text"
+              id="fileComment"
+              name="comment"
+              placeholder="添加文件注释"
+            />
+          </div>
+          <button type="submit">上传文件</button>
+        </form>
+      </div>
+    </div>
+
+    <script src="file_management.js"></script>
+  </body>
+</html>
