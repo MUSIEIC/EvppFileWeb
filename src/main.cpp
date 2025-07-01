@@ -1,6 +1,8 @@
 
 #include <evpp/http/http_server.h>
 #include <evpp/event_loop.h>
+#include <evpp/slice.h>
+#include <fstream>
 void DefaultHandler(evpp::EventLoop* loop,
                     const evpp::http::ContextPtr& ctx,
                     const evpp::http::HTTPSendResponseCallback& cb) {
@@ -61,7 +63,7 @@ void FileListHandler(evpp::EventLoop* loop,
                   const evpp::http::ContextPtr& ctx,
                   const evpp::http::HTTPSendResponseCallback& cb){
     ctx->AddResponseHeader("Content-Type", "application/json; charset=utf-8");
-    std::string body = "{\"files\":[{\"name\":\"a.txt\",\"location\":\"haung-ubuntu\",\"path\":\"../file/a.txt\",\"type\":\"txt\",\"comment\":\"test\"},{\"name\":\"b.txt\",\"location\":\"haung-ubuntu\",\"path\":\"../file/b.txt\",\"type\":\"txt\",\"comment\":\"test\"}]}";
+    std::string body = "{\"files\":[{\"name\":\"a.txt\",\"location\":\"haung-ubuntu\",\"path\":\"../file/a.txt\",\"type\":\"txt\",\"comment\":\"test\"},{\"name\":\"b.txt\",\"location\":\"haung-ubuntu\",\"path\":\"../file/b.txt\",\"type\":\"txt\",\"comment\":\"test\"},{\"name\":\"c.mp4\",\"location\":\"haung-ubuntu\",\"path\":\"../file/c.mp4\",\"type\":\"txt\",\"comment\":\"test\"}]}";
     cb(body);
 }
 
@@ -133,6 +135,56 @@ void DownloadHandler(evpp::EventLoop* loop,
     ctx->AddResponseHeader("Content-Disposition", "attachment; filename=" + file_name);
     cb(data);
 }
+
+void SearchHandler(evpp::EventLoop* loop,
+                  const evpp::http::ContextPtr& ctx,
+                  const evpp::http::HTTPSendResponseCallback& cb){
+    std::string path = ctx->FindQueryFromURI(ctx->original_uri(), "keywords");
+    int i = 0;
+    while ((i = path.find("%2C", i)) != std::string::npos)
+    {
+        path.replace(i, 3, ",");
+        ++i;
+    }
+    std::stringstream strkeywords(std::string(path.begin(), path.end()));
+    std::vector<std::string> keywords;
+    std::string token;
+    while (std::getline(strkeywords, token, ','))
+    {
+        keywords.push_back(token);
+        std::cout<<"keyword:"<<token<<std::endl;
+    }
+    ctx->AddResponseHeader("Content-Type", "application/json; charset=utf-8");
+    std::string body = "{\"files\":[{\"name\":\"b.txt\",\"location\":\"haung-ubuntu\",\"path\":\"../file/b.txt\",\"type\":\"txt\",\"comment\":\"test\"}]}";
+    cb(body);
+}
+
+void UploadHandler(evpp::EventLoop* loop,
+                  const evpp::http::ContextPtr& ctx,
+                  const evpp::http::HTTPSendResponseCallback& cb){ 
+    evpp::Slice data=ctx->body();
+    std::string sdata(data.ToString());
+    ssize_t pos = sdata.find("filename=\"")+10;
+    if(pos==std::string::npos){
+        LOG_ERROR << "no filename";
+        cb("no filename");
+        return;
+    }
+    int i = 0;
+    while(sdata[pos+i]!='\"')
+        ++i;
+    std::string filename(sdata.begin() + pos, sdata.begin() + pos + i);
+    // std::cout<<"filename:"<<filename<<std::endl;
+    std::string stroepath = "../file/" + filename;
+    pos = sdata.find("\r\n\r\n") + 4;
+    ssize_t endpos=sdata.find("\r\n--");
+    std::string filedata(sdata.begin() + pos, sdata.begin() + endpos);
+    // std::cout<<"filedata"<<filedata<<std::endl;
+    std::ofstream ofs(stroepath, std::ios::binary | std::ios::out | std::ios::app);
+    ofs.write(filedata.data(), filedata.size());
+    ofs.close();
+    cb("OK");
+}
 int main(int argc, char *argv[])
 {
     std::vector<int> ports = { 12345, 23456, 23457 };
@@ -166,6 +218,8 @@ int main(int argc, char *argv[])
     server.RegisterHandler("/api/files", &FileListHandler);
     server.RegisterHandler("/api/files/delete", &DeleteHandler);
     server.RegisterHandler("/api/files/download", &DownloadHandler);
+    server.RegisterHandler("/api/files/search", &SearchHandler);
+    server.RegisterHandler("/api/files/upload", &UploadHandler);
     server.Init(ports);
     server.Start();
     while (!server.IsStopped()) {

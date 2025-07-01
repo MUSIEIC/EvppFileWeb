@@ -132,6 +132,9 @@ function renderFileList(files) {
 function showError(message) {
     const errorDiv = document.getElementById('error-message');
     errorDiv.textContent = message;
+    setTimeout(() => {
+        errorDiv.textContent = '';
+    }, 3000);
     errorDiv.style.display = 'block';
 }
 
